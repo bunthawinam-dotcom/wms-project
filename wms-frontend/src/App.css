@@ -98,6 +98,7 @@ svg {
   justify-content: space-between;
   align-items: flex-start;
   gap: 18px;
+  position: relative;
 }
 
 .small-label {
@@ -131,6 +132,8 @@ svg {
   font-weight: 600;
   letter-spacing: 0.02em;
   white-space: nowrap;
+  align-self: flex-start;
+  margin-top: -2px;
 }
 
 .secure-pill svg {
