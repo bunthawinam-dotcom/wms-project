@@ -1,0 +1,12 @@
+{
+  "name": "wms-workspace-scripts",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm:start-front\" \"npm:start-back\"",
+    "start-front": "cd wms-frontend && npm run dev",
+    "start-back": "cd wms-backend-java && mvn spring-boot:run"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
