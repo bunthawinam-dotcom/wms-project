@@ -93,13 +93,12 @@ svg {
   border: 1px solid var(--line);
 }
 
-/* ✅ แก้ตรงนี้: เปลี่ยนเป็น column ให้ Secure อยู่บน */
 .card-heading {
   display: flex;
   flex-direction: column;
-  align-items: center;  /* เปลี่ยนจาก flex-start → center */
+  align-items: center;
   gap: 12px;
-  text-align: center;   /* เพิ่มให้ข้อความใต้ตรงกลางด้วย */
+  text-align: center;
 }
 
 .small-label {
@@ -336,7 +335,7 @@ svg {
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: flex-start; /* ✅ แก้ตรงนี้ */
   background:
     radial-gradient(circle at 12% 10%, rgba(139, 124, 246, 0.10), transparent 40%),
     var(--bg-deep);

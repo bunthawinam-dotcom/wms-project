@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: wms-backend
+    runtime: java
+    plan: free
+    buildCommand: "cd wms-backend-java && mvn -DskipTests package"
+    startCommand: "cd wms-backend-java && java -jar target/wms-backend-java-0.0.1-SNAPSHOT.jar"
+    envVars:
+      - key: JAVA_VERSION
+        value: 21
+      - key: SERVER_PORT
+        value: 10000
+      - key: GOOGLE_CLIENT_ID
+        value: ""
+      - key: GOOGLE_CLIENT_SECRET
+        value: ""
+      - key: BASE_URL
+        value: "https://your-render-app-name.onrender.com"
+      - key: FRONTEND_URL
+        value: "https://your-netlify-app-name.netlify.app"
+      - key: JWT_SECRET
+        value: "change_this_secret_change_this_secret_change_this_secret"
+      - key: SUPABASE_URL
+        value: "https://ycngnbglbljqhcetnquv.supabase.co/rest/v1/"
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        value: ""

@@ -1,0 +1,8 @@
+[build]
+  command = "npm --prefix wms-frontend install && npm --prefix wms-frontend run build"
+  publish = "wms-frontend/dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

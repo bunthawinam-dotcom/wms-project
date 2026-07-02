@@ -179,7 +179,6 @@ function App() {
 }
 
 /* ---------------------------- icon primitives ---------------------------- */
-/* Small inline icon set so the UI doesn't depend on an extra icon package. */
 
 function MailIcon() {
   return (
@@ -287,12 +286,7 @@ function LogoutIcon() {
 function RefreshIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path
-        d="M16 6.5A6.5 6.5 0 1 0 17 10"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
+      <path d="M16 6.5A6.5 6.5 0 1 0 17 10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
       <path d="M16 3v3.5h-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
@@ -350,15 +344,16 @@ function LoginPage({
         </div>
 
         <section className="login-card">
+          {/* ✅ แก้ตรงนี้: secure-pill ขึ้นมาอยู่บน */}
           <div className="card-heading">
-            <div>
-              <p className="small-label">Welcome back</p>
-              <h2>Sign in to your account</h2>
-            </div>
             <span className="secure-pill">
               <ShieldIcon />
               Secure
             </span>
+            <div>
+              <p className="small-label">Welcome back</p>
+              <h2>Sign in to your account</h2>
+            </div>
           </div>
 
           <div className="login-info">
