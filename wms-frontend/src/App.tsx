@@ -14,9 +14,20 @@ const apiBase = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 const storageKey = 'wms_auth_token'
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+function decodeJwtPayload(token: string): Record<string, any> | null {
+  try {
+    const payload = token.split('.')[1]
+    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    return JSON.parse(decoded)
+  } catch {
+    return null
+  }
+}
+
 function App() {
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState<UserProfile | null>(null)
+  const [currentToken, setCurrentToken] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -35,11 +46,13 @@ function App() {
 
     if (token) {
       localStorage.setItem(storageKey, token)
+      setCurrentToken(token)
       window.history.replaceState(null, '', window.location.pathname)
     }
 
     const savedToken = localStorage.getItem(storageKey)
     if (savedToken) {
+      setCurrentToken(savedToken)
       fetchProfile(savedToken)
     }
   }, [])
@@ -122,6 +135,7 @@ function App() {
       }
 
       localStorage.setItem(storageKey, token)
+      setCurrentToken(token)
       setUser(body.user)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in.')
@@ -133,6 +147,7 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem(storageKey)
     setUser(null)
+    setCurrentToken(null)
     setError(null)
     setEmail('')
     setPassword('')
@@ -166,7 +181,7 @@ function App() {
           path="/dashboard"
           element={
             user ? (
-              <Dashboard user={user} onLogout={handleLogout} />
+              <Dashboard user={user} token={currentToken} onLogout={handleLogout} />
             ) : (
               <Navigate to="/" replace />
             )
@@ -309,6 +324,14 @@ function DocIcon() {
   )
 }
 
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 /* -------------------------------- login page ------------------------------- */
 
 function LoginPage({
@@ -419,9 +442,114 @@ function LoginPage({
   )
 }
 
+/* -------------------------------- profile modal -------------------------------- */
+
+function ProfileModal({
+  user,
+  token,
+  onClose,
+  onNameChange
+}: {
+  user: UserProfile
+  token: string | null
+  onClose: () => void
+  onNameChange: (newName: string) => void
+}) {
+  const [editMode, setEditMode] = useState(false)
+  const [nameDraft, setNameDraft] = useState(user.name)
+
+  const payload = token ? decodeJwtPayload(token) : null
+  const lastSignedIn = payload?.iat ? new Date(payload.iat * 1000).toLocaleString() : 'Unknown'
+
+  const initials = user.name
+    .split(' ')
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+
+  const handleSave = () => {
+    // Note: this only updates the local session state.
+    // A PATCH /api/me endpoint on wms-backend-java would be needed to persist this permanently.
+    onNameChange(nameDraft)
+    setEditMode(false)
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={(event) => event.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Close">
+          <CloseIcon />
+        </button>
+
+        <div className="modal-avatar">{initials || 'U'}</div>
+
+        {editMode ? (
+          <input
+            className="text-input modal-name-input"
+            value={nameDraft}
+            onChange={(event) => setNameDraft(event.target.value)}
+            autoFocus
+          />
+        ) : (
+          <h2 className="modal-name">{user.name}</h2>
+        )}
+
+        <p className="modal-email">{user.email}</p>
+
+        <div className="modal-badges">
+          <span className="status-badge status-ok">{user.role}</span>
+          <span className="status-badge status-ok">{user.provider}</span>
+        </div>
+
+        <div className="modal-info-row">
+          <span>Last signed in</span>
+          <span>{lastSignedIn}</span>
+        </div>
+
+        <div className="modal-actions">
+          {editMode ? (
+            <>
+              <button className="button button-primary" type="button" onClick={handleSave}>
+                Save
+              </button>
+              <button
+                className="button button-secondary"
+                type="button"
+                onClick={() => {
+                  setNameDraft(user.name)
+                  setEditMode(false)
+                }}
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button className="button button-secondary" type="button" onClick={() => setEditMode(true)}>
+              Edit profile
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* -------------------------------- dashboard -------------------------------- */
 
-function Dashboard({ user, onLogout }: { user: UserProfile; onLogout: () => void }) {
+function Dashboard({
+  user,
+  token,
+  onLogout
+}: {
+  user: UserProfile
+  token: string | null
+  onLogout: () => void
+}) {
+  const [showProfile, setShowProfile] = useState(false)
+  const [displayName, setDisplayName] = useState(user.name)
+
   const inventoryItems = [
     { sku: 'WMS-001', product: 'Pallet Rack', location: 'A1-04', stock: 18, status: 'In stock' },
     { sku: 'WMS-002', product: 'Packing Tape', location: 'B2-11', stock: 34, status: 'In stock' },
@@ -444,7 +572,7 @@ function Dashboard({ user, onLogout }: { user: UserProfile; onLogout: () => void
     { label: 'Settings', icon: <SettingsIcon /> }
   ]
 
-  const initials = user.name
+  const initials = displayName
     .split(' ')
     .map((part) => part[0])
     .filter(Boolean)
@@ -475,10 +603,16 @@ function Dashboard({ user, onLogout }: { user: UserProfile; onLogout: () => void
           <aside className="dashboard-sidebar">
             <div className="profile-card">
               <p className="label">Admin profile</p>
-              <div className="profile-identity">
+              <div
+                className="profile-identity"
+                onClick={() => setShowProfile(true)}
+                role="button"
+                tabIndex={0}
+                style={{ cursor: 'pointer' }}
+              >
                 <span className="avatar-badge">{initials || 'U'}</span>
                 <div>
-                  <h2>{user.name}</h2>
+                  <h2>{displayName}</h2>
                   <p>{user.email}</p>
                 </div>
               </div>
@@ -570,6 +704,15 @@ function Dashboard({ user, onLogout }: { user: UserProfile; onLogout: () => void
           </main>
         </div>
       </div>
+
+      {showProfile && (
+        <ProfileModal
+          user={{ ...user, name: displayName }}
+          token={token}
+          onClose={() => setShowProfile(false)}
+          onNameChange={setDisplayName}
+        />
+      )}
     </div>
   )
 }
